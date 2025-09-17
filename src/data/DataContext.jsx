@@ -25,7 +25,6 @@ function loadStore() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return { lists: DEFAULT_LISTS, tasks: DEFAULT_TASKS };
     const parsed = JSON.parse(raw);
-    // very light validation
     if (!parsed.lists || !Array.isArray(parsed.lists)) parsed.lists = DEFAULT_LISTS;
     if (!parsed.tasks || typeof parsed.tasks !== "object") parsed.tasks = DEFAULT_TASKS;
     return parsed;
@@ -35,16 +34,11 @@ function loadStore() {
 }
 
 function saveStore(store) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(store));
-  } catch {}
+  try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch {}
 }
 
 function slugify(name) {
-  const s = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+  const s = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   return s || `list-${Math.random().toString(36).slice(2, 8)}`;
 }
 
@@ -52,34 +46,26 @@ export function DataProvider({ children }) {
   const [lists, setLists] = useState(DEFAULT_LISTS);
   const [tasks, setTasks] = useState(DEFAULT_TASKS);
 
-  // load from localStorage once
   useEffect(() => {
     const { lists, tasks } = loadStore();
     setLists(lists);
     setTasks(tasks);
   }, []);
 
-  // persist changes
   useEffect(() => {
     saveStore({ lists, tasks });
   }, [lists, tasks]);
 
   const ensureBucket = (listId) => {
-    setTasks((prev) => {
-      if (prev[listId]) return prev;
-      return { ...prev, [listId]: [] };
-    });
+    setTasks((prev) => (prev[listId] ? prev : { ...prev, [listId]: [] }));
   };
 
   const addList = (name, emoji = "📝") => {
     const baseId = slugify(name);
-    // ensure id uniqueness
     let id = baseId;
     let i = 2;
     const existing = new Set(lists.map((l) => l.id));
-    while (existing.has(id)) {
-      id = `${baseId}-${i++}`;
-    }
+    while (existing.has(id)) id = `${baseId}-${i++}`;
     const newList = { id, name, emoji };
     setLists((prev) => [...prev, newList]);
     setTasks((prev) => ({ ...prev, [id]: [] }));
@@ -87,14 +73,20 @@ export function DataProvider({ children }) {
   };
 
   const DEFAULT_IDS = new Set(DEFAULT_LISTS.map((l) => l.id));
+
   const removeList = (id) => {
-    if (DEFAULT_IDS.has(id)) return; // protect defaults
+    if (DEFAULT_IDS.has(id)) return; // keep defaults undeletable
     setLists((prev) => prev.filter((l) => l.id !== id));
     setTasks((prev) => {
       const copy = { ...prev };
       delete copy[id];
       return copy;
     });
+  };
+
+  /** Update list properties (e.g., name, emoji). ID stays the same. */
+  const updateList = (id, patch) => {
+    setLists((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   };
 
   const getTasks = (listId) => tasks[listId] || [];
@@ -110,9 +102,7 @@ export function DataProvider({ children }) {
   const toggleTask = (listId, taskId) => {
     setTasks((prev) => ({
       ...prev,
-      [listId]: (prev[listId] || []).map((t) =>
-        t.id === taskId ? { ...t, done: !t.done } : t
-      ),
+      [listId]: (prev[listId] || []).map((t) => (t.id === taskId ? { ...t, done: !t.done } : t)),
     }));
   };
 
@@ -126,9 +116,7 @@ export function DataProvider({ children }) {
   const setTaskColor = (listId, taskId, color) => {
     setTasks((prev) => ({
       ...prev,
-      [listId]: (prev[listId] || []).map((t) =>
-        t.id === taskId ? { ...t, color } : t
-      ),
+      [listId]: (prev[listId] || []).map((t) => (t.id === taskId ? { ...t, color } : t)),
     }));
   };
 
@@ -138,6 +126,7 @@ export function DataProvider({ children }) {
       tasks,
       addList,
       removeList,
+      updateList,   // exposed
       getTasks,
       addTask,
       toggleTask,

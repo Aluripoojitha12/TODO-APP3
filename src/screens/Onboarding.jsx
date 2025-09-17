@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../ui/HeaderBar.jsx";
-import heroImg from "src/assets/image.png";
+import heroImg from "../assets/image.png";
 
 export default function Onboarding() {
   const nav = useNavigate();
@@ -11,7 +11,9 @@ export default function Onboarding() {
         <div className="illus">
           <img src={heroImg} alt="Organize illustration" />
         </div>
-        <h2>Get Organized Your Life</h2>
+        <h2 className="title" style={{ fontSize: 28, marginTop: 6 }}>
+          Get Organized Your Life
+        </h2>
         <p className="muted">
           A simple, effective list manager to keep your day tidy.
         </p>
@@ -22,3 +24,4 @@ export default function Onboarding() {
     </main>
   );
 }
+

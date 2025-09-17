@@ -26,7 +26,7 @@ export default function Categories() {
   };
 
   return (
-    <main className="screen yellow">
+    <main className="screen yellow-solid">
       <HeaderBar title="Hello" menu />
       <div className="padded">
         <p className="muted">

@@ -1,0 +1,199 @@
+:root{
+  --yellow:#f7e27e;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --card:#fff;
+  --radius:18px;
+  --shadow:0 10px 18px rgba(0,0,0,.08);
+
+  /* task colors */
+  --c1:#6C63FF;  /* purple */
+  --c2:#4CC3FF;  /* sky */
+  --c3:#00C2A8;  /* teal */
+  --c4:#FF6B6B;  /* coral */
+
+  /* emoji font fallback */
+  --emoji-font: "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",
+                "Twemoji Mozilla","Segoe UI Symbol";
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  color:var(--text);
+}
+
+.screen{min-height:100%;display:flex;flex-direction:column}
+
+/* Default curvy yellow header (used by most pages) */
+.screen.yellow{
+  background:
+    radial-gradient(140% 95% at 110% -10%, #fff 60%, transparent 61%),
+    var(--yellow);
+}
+
+/* Tasks page only: yellow hero on top, WHITE below the cards */
+.screen.yellow.tasks-linear{
+  --hero-height: 96px; /* smaller hero */
+  background: linear-gradient(180deg, var(--yellow) var(--hero-height), #fff var(--hero-height));
+}
+/* push the content (task list) below the yellow hero area */
+.screen.yellow.tasks-linear .padded{
+  padding-top: calc(var(--hero-height) + 12px);
+}
+
+@media (max-width: 640px){
+  .screen.yellow.tasks-linear{ --hero-height: 84px; }
+  .screen.yellow.tasks-linear .padded{ padding-top: calc(var(--hero-height) + 10px); }
+}
+@media (min-width: 1024px){
+  .screen.yellow.tasks-linear{ --hero-height: 110px; }
+  .screen.yellow.tasks-linear .padded{ padding-top: calc(var(--hero-height) + 12px); }
+}
+
+/* 100% yellow option (used by Onboarding if needed) */
+.screen.yellow-solid{ background: var(--yellow) !important; }
+
+.topbar{
+  height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 12px;position:sticky;top:0;background:transparent;
+}
+.icon-btn{background:transparent;border:0;font-size:20px;cursor:pointer;padding:6px}
+
+.card{background:var(--card);border-radius:var(--radius);padding:24px;margin:24px;box-shadow:var(--shadow)}
+.card.center{margin:auto;width:min(480px,92%);text-align:center}
+
+.title{font-size:34px;margin:0 0 8px}
+.muted{color:var(--muted);margin:8px 0 20px}
+
+.btn{border:0;padding:12px 18px;border-radius:12px;cursor:pointer;font-weight:600}
+.btn.primary{background:#10b981;color:white}
+
+/* places that render emoji – force emoji-capable fonts */
+.list-card .icon,
+.emoji-btn,
+.task .title,
+.btn.emoji,
+.emoji-swatch{
+  font-family: var(--emoji-font), Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+
+.padded{padding:0 16px 80px}
+
+.list-cards{display:grid;gap:12px;margin-top:16px}
+.list-card{
+  display:grid;grid-template-columns:1fr auto;align-items:center;
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)
+}
+.list-link{display:flex;gap:12px;align-items:center;padding:14px 16px;color:inherit;text-decoration:none}
+.list-card .icon{font-size:28px}
+.list-card .meta .name{font-weight:700}
+.list-card .meta .sub{color:var(--muted);font-size:13px}
+
+.tasks{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.task{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+  background:var(--card);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)
+}
+.checkbox{display:flex;align-items:center;gap:10px}
+.checkbox input{width:18px;height:18px}
+.task .title{font-size:16px;display:inline-block}
+.task .title.done{text-decoration:line-through;opacity:.6}
+
+/* Color badge on each task */
+.badge{width:10px;height:10px;border-radius:999px;display:inline-block;margin-right:10px;flex:0 0 auto}
+
+/* Floating add button */
+.fab{
+  position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
+  background:#10b981;color:white;font-size:28px;border:0;box-shadow:var(--shadow);cursor:pointer
+}
+
+/* Onboarding illustration circle with image inside */
+.illus{
+  width:260px;
+  height:260px;
+  margin:0 auto 16px;
+  border-radius:50%;
+  background:#ffd84d;           /* yellow circle */
+  box-shadow:var(--shadow);
+  display:grid;
+  place-items:center;
+  overflow:hidden;               /* clip the image to the circle */
+}
+.illus img{
+  width:100%;
+  height:100%;
+  object-fit:cover;              /* fill the circle */
+  display:block;
+}
+.screen.split .hero{margin:auto;text-align:center}
+
+/* ---------- MODAL (Add Task / Add Category) ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);
+  display:flex;align-items:center;justify-content:center;z-index:50;
+  overscroll-behavior: contain;
+  padding:12px;                 /* small gutter around dialog */
+}
+.modal{
+  background:#fff;border-radius:16px;box-shadow:var(--shadow);
+  width:min(520px,92%);padding:16px;
+  max-height:90vh;              /* never exceed viewport */
+  overflow:auto;                /* scroll inside if needed */
+  box-sizing:border-box;
+}
+.modal h3{margin:0 0 8px}
+.modal .row{display:flex;gap:10px;align-items:center;margin:10px 0}
+.modal .row input[type="text"]{
+  flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:16px;
+}
+
+/* Emoji picker */
+.emoji-grid{
+  display:grid;grid-template-columns:repeat(10,1fr);gap:6px;
+  max-height:160px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px;padding:8px
+}
+.emoji-btn{font-size:20px;line-height:1;background:transparent;border:0;cursor:pointer;padding:6px;border-radius:8px}
+.emoji-btn:hover{background:#f3f4f6}
+
+/* ---------- MOBILE: small centered card ---------- */
+@media (max-width: 768px){
+  .modal-backdrop{
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .modal{
+    width:min(92vw, 380px);      /* compact card */
+    max-height:calc(100dvh - 96px);
+    padding:14px;
+    border-radius:16px;
+    margin:0 auto;
+    animation: modalIn .18s ease-out;
+  }
+  .modal .row{ flex-wrap:wrap; }
+  .modal .row > *{ flex:1 1 100%; }  /* stack inputs & buttons */
+  .emoji-grid{ grid-template-columns:repeat(6,1fr); max-height:40vh; }
+}
+/* ultra-small phones */
+@media (max-width: 360px){
+  .modal{ width:94vw; }
+  .emoji-grid{ grid-template-columns:repeat(5,1fr); }
+}
+
+@keyframes modalIn{
+  from{ transform: translateY(8px); opacity:.98; }
+  to{ transform: translateY(0); opacity:1; }
+}
+
+/* color chips */
+.color-chip{width:28px;height:28px;border-radius:999px;border:2px solid #ffffff88;box-shadow:var(--shadow);cursor:pointer}
+.color-chip.selected{outline:3px solid #11111133}
+
+/* keep existing grid on larger screens */
+@media (min-width:780px){
+  .list-cards{grid-template-columns:repeat(2,1fr)}
+}

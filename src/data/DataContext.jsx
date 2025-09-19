@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { read, save, subscribe, clearAll, exportAsURL, importFromFile } from "./storage";
 
 const DataCtx = createContext(null);
-
-const LS_KEY = "todoapp3_store_v1";
 
 const DEFAULT_LISTS = [
   { id: "today",    name: "Today",    emoji: "📅" },
@@ -20,50 +19,38 @@ const DEFAULT_TASKS = {
   shopping: [],
 };
 
-function loadStore() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { lists: DEFAULT_LISTS, tasks: DEFAULT_TASKS };
-    const parsed = JSON.parse(raw);
-    if (!parsed.lists || !Array.isArray(parsed.lists)) parsed.lists = DEFAULT_LISTS;
-    if (!parsed.tasks || typeof parsed.tasks !== "object") parsed.tasks = DEFAULT_TASKS;
-    return parsed;
-  } catch {
-    return { lists: DEFAULT_LISTS, tasks: DEFAULT_TASKS };
-  }
-}
-
-function saveStore(store) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch {}
-}
-
 function slugify(name) {
   const s = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   return s || `list-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function DataProvider({ children }) {
-  const [lists, setLists] = useState(DEFAULT_LISTS);
-  const [tasks, setTasks] = useState(DEFAULT_TASKS);
+  // boot from storage (with migration), else defaults
+  const boot = read();
+  const [lists, setLists] = useState(boot?.lists ?? DEFAULT_LISTS);
+  const [tasks, setTasks] = useState(boot?.tasks ?? DEFAULT_TASKS);
 
+  // persist on any change (debounced inside save())
+  useEffect(() => save({ lists, tasks }), [lists, tasks]);
+
+  // cross-tab sync: reload state when storage changes elsewhere
   useEffect(() => {
-    const { lists, tasks } = loadStore();
-    setLists(lists);
-    setTasks(tasks);
+    const unsub = subscribe(() => {
+      const data = read();
+      if (data) {
+        setLists(data.lists);
+        setTasks(data.tasks);
+      }
+    });
+    return unsub;
   }, []);
 
-  useEffect(() => {
-    saveStore({ lists, tasks });
-  }, [lists, tasks]);
-
-  const ensureBucket = (listId) => {
+  const ensureBucket = (listId) =>
     setTasks((prev) => (prev[listId] ? prev : { ...prev, [listId]: [] }));
-  };
 
   const addList = (name, emoji = "📝") => {
     const baseId = slugify(name);
-    let id = baseId;
-    let i = 2;
+    let id = baseId, i = 2;
     const existing = new Set(lists.map((l) => l.id));
     while (existing.has(id)) id = `${baseId}-${i++}`;
     const newList = { id, name, emoji };
@@ -102,7 +89,9 @@ export function DataProvider({ children }) {
   const toggleTask = (listId, taskId) => {
     setTasks((prev) => ({
       ...prev,
-      [listId]: (prev[listId] || []).map((t) => (t.id === taskId ? { ...t, done: !t.done } : t)),
+      [listId]: (prev[listId] || []).map((t) =>
+        t.id === taskId ? { ...t, done: !t.done } : t
+      ),
     }));
   };
 
@@ -116,8 +105,33 @@ export function DataProvider({ children }) {
   const setTaskColor = (listId, taskId, color) => {
     setTasks((prev) => ({
       ...prev,
-      [listId]: (prev[listId] || []).map((t) => (t.id === taskId ? { ...t, color } : t)),
+      [listId]: (prev[listId] || []).map((t) =>
+        t.id === taskId ? { ...t, color } : t
+      ),
     }));
+  };
+
+  /** Optional helpers (use from a settings screen if you add one) */
+  const clearCompleted = () => {
+    setTasks((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([id, arr]) => [id, arr.filter((t) => !t.done)])
+      )
+    );
+  };
+
+  const resetAll = () => {
+    clearAll();
+    setLists(DEFAULT_LISTS);
+    setTasks(DEFAULT_TASKS);
+  };
+
+  const exportDataURL = () => exportAsURL({ lists, tasks });
+
+  const importDataFile = async (file) => {
+    const next = await importFromFile(file);
+    setLists(next.lists);
+    setTasks(next.tasks);
   };
 
   const value = useMemo(
@@ -126,12 +140,17 @@ export function DataProvider({ children }) {
       tasks,
       addList,
       removeList,
-      updateList,   // exposed
+      updateList,
       getTasks,
       addTask,
       toggleTask,
       deleteTask,
       setTaskColor,
+      // optional utilities
+      clearCompleted,
+      resetAll,
+      exportDataURL,
+      importDataFile,
     }),
     [lists, tasks]
   );
